@@ -1,8 +1,8 @@
 use crate::errors::*;
 use crate::net::connection::Connection;
-use pnet::datalink::{self, Channel::Ethernet, NetworkInterface};
-use pktparse::{ethernet, ipv4, tcp};
 use pktparse::ip::IPProtocol;
+use pktparse::{ethernet, ipv4, tcp};
+use pnet::datalink::{self, Channel::Ethernet, NetworkInterface};
 use std::net::SocketAddr;
 use tokio::sync::mpsc;
 use tokio::task;
@@ -21,16 +21,27 @@ pub struct CapturedPacket {
     pub is_psh: bool,
 }
 
-pub async fn sniff_async(interface: String, src: SocketAddr,dst: SocketAddr,tx: mpsc::Sender<CapturedPacket>) -> Result<()> {
-    task::spawn_blocking(move || {
-        sniff_blocking(&interface, &src, &dst, &tx)
-    }).await??;
+pub async fn sniff_async(
+    interface: String,
+    src: SocketAddr,
+    dst: SocketAddr,
+    tx: mpsc::Sender<CapturedPacket>,
+) -> Result<()> {
+    task::spawn_blocking(move || sniff_blocking(&interface, &src, &dst, &tx)).await??;
     Ok(())
 }
 
-fn sniff_blocking(interface_name: &str,src: &SocketAddr,dst: &SocketAddr,tx: &mpsc::Sender<CapturedPacket>) -> Result<()> {
+fn sniff_blocking(
+    interface_name: &str,
+    src: &SocketAddr,
+    dst: &SocketAddr,
+    tx: &mpsc::Sender<CapturedPacket>,
+) -> Result<()> {
     let interfaces = datalink::interfaces();
-    let interface = interfaces.into_iter().find(|iface: &NetworkInterface| iface.name == *interface_name).context("Interface not found")?;
+    let interface = interfaces
+        .into_iter()
+        .find(|iface: &NetworkInterface| iface.name == *interface_name)
+        .context("Interface not found")?;
 
     let (_, mut rx) = match datalink::channel(&interface, Default::default()) {
         Ok(Ethernet(_tx, rx)) => (_tx, rx),
@@ -88,7 +99,11 @@ fn sniff_blocking(interface_name: &str,src: &SocketAddr,dst: &SocketAddr,tx: &mp
     Ok(())
 }
 
-pub async fn get_seq_ack(interface: String,src: SocketAddr,dst: SocketAddr) -> Result<Connection> {
+pub async fn get_seq_ack(
+    interface: String,
+    src: SocketAddr,
+    dst: SocketAddr,
+) -> Result<Connection> {
     let (tx, mut rx) = mpsc::channel::<CapturedPacket>(100);
     let sniffer = tokio::spawn(sniff_async(interface, src, dst, tx));
 

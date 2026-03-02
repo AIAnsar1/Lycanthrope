@@ -2,7 +2,6 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
-
 #[derive(Debug, Clone)]
 pub struct Connection {
     pub src: SocketAddr,

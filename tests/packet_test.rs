@@ -8,8 +8,12 @@ fn test_build_packet_syn() {
     let pkt = ffi::build_tcp_packet(
         Ipv4Addr::new(10, 0, 0, 1),
         Ipv4Addr::new(10, 0, 0, 2),
-        12345, 80, 100, 0,
-        LYC_TH_SYN, &[],
+        12345,
+        80,
+        100,
+        0,
+        LYC_TH_SYN,
+        &[],
     )
     .expect("SYN packet should build");
 
@@ -24,8 +28,12 @@ fn test_build_packet_with_payload() {
     let pkt = ffi::build_tcp_packet(
         Ipv4Addr::new(192, 168, 1, 100),
         Ipv4Addr::new(192, 168, 1, 1),
-        4444, 80, 0xDEADBEEF, 0xCAFEBABE,
-        LYC_TH_ACK | LYC_TH_PSH, payload,
+        4444,
+        80,
+        0xDEADBEEF,
+        0xCAFEBABE,
+        LYC_TH_ACK | LYC_TH_PSH,
+        payload,
     )
     .expect("PSH+ACK packet should build");
 
@@ -37,8 +45,12 @@ fn test_build_packet_empty_payload() {
     let pkt = ffi::build_tcp_packet(
         Ipv4Addr::new(127, 0, 0, 1),
         Ipv4Addr::new(127, 0, 0, 1),
-        9999, 22, 555, 0,
-        LYC_TH_RST, &[],
+        9999,
+        22,
+        555,
+        0,
+        LYC_TH_RST,
+        &[],
     )
     .expect("RST should build");
 
@@ -50,8 +62,12 @@ fn test_ip_checksum_verification() {
     let pkt = ffi::build_tcp_packet(
         Ipv4Addr::new(172, 16, 0, 1),
         Ipv4Addr::new(172, 16, 0, 2),
-        8080, 443, 1000, 2000,
-        LYC_TH_ACK, b"test",
+        8080,
+        443,
+        1000,
+        2000,
+        LYC_TH_ACK,
+        b"test",
     )
     .unwrap();
 
@@ -64,8 +80,12 @@ fn test_packet_structure_integrity() {
     let pkt = ffi::build_tcp_packet(
         Ipv4Addr::new(192, 168, 1, 100),
         Ipv4Addr::new(192, 168, 1, 200),
-        31337, 23, 0xAABBCCDD, 0x11223344,
-        LYC_TH_ACK | LYC_TH_PSH, b"INJECT_TEST",
+        31337,
+        23,
+        0xAABBCCDD,
+        0x11223344,
+        LYC_TH_ACK | LYC_TH_PSH,
+        b"INJECT_TEST",
     )
     .unwrap();
 
@@ -82,8 +102,12 @@ fn test_packet_structure_integrity() {
 #[test]
 fn test_tcp_flagset_roundtrip() {
     let flags = TcpFlagSet {
-        syn: true, ack: true, fin: false,
-        rst: false, psh: true, urg: false,
+        syn: true,
+        ack: true,
+        fin: false,
+        rst: false,
+        psh: true,
+        urg: false,
     };
 
     let raw = flags.to_raw();

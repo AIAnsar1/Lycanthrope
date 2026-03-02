@@ -1,6 +1,3 @@
-
-
-
 fn main() {
     let mut build = cc::Build::new();
 
@@ -32,9 +29,3 @@ fn main() {
 
     println!("cargo:rerun-if-changed=csrc/");
 }
-
-
-
-
-
-

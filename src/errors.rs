@@ -1,4 +1,4 @@
-pub use anyhow::{anyhow, bail, Context, Error, Result};
+pub use anyhow::{Context, Error, Result, anyhow, bail};
 pub use tracing::{debug, error, info, trace, warn};
 
 use thiserror::Error;

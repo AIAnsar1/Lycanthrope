@@ -1,5 +1,5 @@
 use crate::errors::*;
-use crate::ffi::{self, bindings::*, RawSocket};
+use crate::ffi::{self, RawSocket, bindings::*};
 use crate::net::connection::Connection;
 use crate::net::packet::{PacketDirection, ParsedPacket, TcpFlagSet};
 use std::net::{Ipv4Addr, SocketAddr};
@@ -44,7 +44,15 @@ impl Injector {
         self.send_tcp(flags, data).await?;
 
         if let Some(tx) = &self.event_tx {
-            let pkt = ParsedPacket::new(self.connection.src,self.connection.dst,self.connection.get_seq().await,self.connection.get_ack().await,TcpFlagSet::from_raw(flags),data.to_vec(),PacketDirection::Injected);
+            let pkt = ParsedPacket::new(
+                self.connection.src,
+                self.connection.dst,
+                self.connection.get_seq().await,
+                self.connection.get_ack().await,
+                TcpFlagSet::from_raw(flags),
+                data.to_vec(),
+                PacketDirection::Injected,
+            );
             let _ = tx.send(pkt).await;
         }
         Ok(())
@@ -74,20 +82,33 @@ impl Injector {
         let (src_ip, dst_ip) = self.extract_ipv4()?;
         let seq = self.connection.get_seq().await;
         let ack = self.connection.get_ack().await;
-        let packet = ffi::build_tcp_packet(src_ip,dst_ip,self.connection.src.port(),self.connection.dst.port(),seq, ack,flags, data)?;
+        let packet = ffi::build_tcp_packet(
+            src_ip,
+            dst_ip,
+            self.connection.src.port(),
+            self.connection.dst.port(),
+            seq,
+            ack,
+            flags,
+            data,
+        )?;
         let socket = Arc::clone(&self.socket);
         let dst_ip_copy = dst_ip;
         let dst_port = self.connection.dst.port();
 
-        tokio::task::spawn_blocking(move || {
-            socket.send_packet(&packet, dst_ip_copy, dst_port)
-        })
-        .await??;
+        tokio::task::spawn_blocking(move || socket.send_packet(&packet, dst_ip_copy, dst_port))
+            .await??;
 
         if !data.is_empty() {
             self.connection.bump_seq(data.len() as u32).await;
         }
-        debug!("Sent TCP: flags=0x{:02x} seq=0x{:x} ack=0x{:x} len={}",flags, seq, ack, data.len());
+        debug!(
+            "Sent TCP: flags=0x{:02x} seq=0x{:x} ack=0x{:x} len={}",
+            flags,
+            seq,
+            ack,
+            data.len()
+        );
         Ok(())
     }
 

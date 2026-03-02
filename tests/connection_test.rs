@@ -22,7 +22,8 @@ async fn test_connection_clone_shares_state() {
     let conn1 = Connection::new(
         "10.0.0.1:4444".parse().unwrap(),
         "10.0.0.2:80".parse().unwrap(),
-        500, 600,
+        500,
+        600,
     );
     let conn2 = conn1.clone();
 
@@ -35,7 +36,8 @@ async fn test_seq_wrapping() {
     let conn = Connection::new(
         "10.0.0.1:1234".parse().unwrap(),
         "10.0.0.2:80".parse().unwrap(),
-        0xFFFFFF00, 0,
+        0xFFFFFF00,
+        0,
     );
 
     conn.bump_seq(0x200).await;
@@ -47,7 +49,8 @@ async fn test_is_duplicate() {
     let conn = Connection::new(
         "10.0.0.1:1234".parse().unwrap(),
         "10.0.0.2:80".parse().unwrap(),
-        0, 0x3000,
+        0,
+        0x3000,
     );
 
     assert!(conn.is_duplicate(0x2000, 500).await);
@@ -59,7 +62,8 @@ async fn test_concurrent_access() {
     let conn = Connection::new(
         "10.0.0.1:1234".parse().unwrap(),
         "10.0.0.2:80".parse().unwrap(),
-        0, 0,
+        0,
+        0,
     );
 
     let mut handles = vec![];

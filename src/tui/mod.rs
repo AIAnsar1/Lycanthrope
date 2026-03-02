@@ -5,9 +5,13 @@ use crate::errors::*;
 use crate::net::injector::Injector;
 use crate::net::packet::ParsedPacket;
 use app::App;
-use crossterm::{event::{Event, KeyCode, KeyModifiers}, execute,terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen}};
+use crossterm::{
+    event::{Event, KeyCode, KeyModifiers},
+    execute,
+    terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
+};
 use futures::StreamExt;
-use ratatui::{backend::CrosstermBackend, Terminal};
+use ratatui::{Terminal, backend::CrosstermBackend};
 use std::io::Stdout;
 use tokio::sync::mpsc;
 
@@ -29,11 +33,18 @@ pub fn restore_terminal(mut terminal: Term) -> Result<()> {
     Ok(())
 }
 
-pub async fn run_tui(injector: &Injector,mut packet_rx: mpsc::Receiver<ParsedPacket>) -> Result<()> {
+pub async fn run_tui(
+    injector: &Injector,
+    mut packet_rx: mpsc::Receiver<ParsedPacket>,
+) -> Result<()> {
     let mut terminal = setup_terminal()?;
     let mut app = App::new();
 
-    app.status = format!("Hijacking {} → {}", injector.connection().src,injector.connection().dst);
+    app.status = format!(
+        "Hijacking {} → {}",
+        injector.connection().src,
+        injector.connection().dst
+    );
     app.is_hijacked = true;
 
     let mut event_stream = crossterm::event::EventStream::new();
@@ -70,7 +81,12 @@ pub async fn run_tui(injector: &Injector,mut packet_rx: mpsc::Receiver<ParsedPac
     Ok(())
 }
 
-async fn handle_key(app: &mut App,injector: &Injector,key: KeyCode,modifiers: KeyModifiers) -> Result<()> {
+async fn handle_key(
+    app: &mut App,
+    injector: &Injector,
+    key: KeyCode,
+    modifiers: KeyModifiers,
+) -> Result<()> {
     if modifiers.contains(KeyModifiers::CONTROL) {
         match key {
             KeyCode::Char('c') | KeyCode::Char('d') => {

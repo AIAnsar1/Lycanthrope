@@ -25,12 +25,24 @@ impl TcpFlagSet {
 
     pub fn to_raw(&self) -> u8 {
         let mut f: u8 = 0;
-        if self.fin { f |= 0x01; }
-        if self.syn { f |= 0x02; }
-        if self.rst { f |= 0x04; }
-        if self.psh { f |= 0x08; }
-        if self.ack { f |= 0x10; }
-        if self.urg { f |= 0x20; }
+        if self.fin {
+            f |= 0x01;
+        }
+        if self.syn {
+            f |= 0x02;
+        }
+        if self.rst {
+            f |= 0x04;
+        }
+        if self.psh {
+            f |= 0x08;
+        }
+        if self.ack {
+            f |= 0x10;
+        }
+        if self.urg {
+            f |= 0x20;
+        }
         f
     }
 }
@@ -38,12 +50,24 @@ impl TcpFlagSet {
 impl fmt::Display for TcpFlagSet {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut flags = Vec::new();
-        if self.syn { flags.push("SYN"); }
-        if self.ack { flags.push("ACK"); }
-        if self.psh { flags.push("PSH"); }
-        if self.fin { flags.push("FIN"); }
-        if self.rst { flags.push("RST"); }
-        if self.urg { flags.push("URG"); }
+        if self.syn {
+            flags.push("SYN");
+        }
+        if self.ack {
+            flags.push("ACK");
+        }
+        if self.psh {
+            flags.push("PSH");
+        }
+        if self.fin {
+            flags.push("FIN");
+        }
+        if self.rst {
+            flags.push("RST");
+        }
+        if self.urg {
+            flags.push("URG");
+        }
         write!(f, "[{}]", flags.join("|"))
     }
 }
@@ -69,7 +93,15 @@ pub enum PacketDirection {
 }
 
 impl ParsedPacket {
-    pub fn new(src: SocketAddr,dst: SocketAddr,seq: u32,ack_num: u32,flags: TcpFlagSet,payload: Vec<u8>,direction: PacketDirection) -> Self {
+    pub fn new(
+        src: SocketAddr,
+        dst: SocketAddr,
+        seq: u32,
+        ack_num: u32,
+        flags: TcpFlagSet,
+        payload: Vec<u8>,
+        direction: PacketDirection,
+    ) -> Self {
         let payload_preview = make_preview(&payload, 60);
         Self {
             src,
@@ -92,7 +124,18 @@ impl fmt::Display for ParsedPacket {
             PacketDirection::Injected => "→",
             PacketDirection::AckReply => "⟲",
         };
-        write!(f,"{} {} {} SEQ=0x{:08x} ACK=0x{:08x} {} len={} {}",self.timestamp.format("%H:%M:%S%.3f"),dir,self.flags,self.seq,self.ack_num,self.src,self.payload.len(), self.payload_preview)
+        write!(
+            f,
+            "{} {} {} SEQ=0x{:08x} ACK=0x{:08x} {} len={} {}",
+            self.timestamp.format("%H:%M:%S%.3f"),
+            dir,
+            self.flags,
+            self.seq,
+            self.ack_num,
+            self.src,
+            self.payload.len(),
+            self.payload_preview
+        )
     }
 }
 
@@ -111,17 +154,21 @@ fn make_preview(data: &[u8], max_len: usize) -> String {
         return String::new();
     }
 
-    let preview: String = data.iter().take(max_len).map(|&b| {
-        if b.is_ascii_graphic() || b == b' ' {
-            b as char
-        } else if b == b'\n' {
-            '↵'
-        } else if b == b'\r' {
-            ' '
-        } else {
-            '·'
-        }
-    }).collect();
+    let preview: String = data
+        .iter()
+        .take(max_len)
+        .map(|&b| {
+            if b.is_ascii_graphic() || b == b' ' {
+                b as char
+            } else if b == b'\n' {
+                '↵'
+            } else if b == b'\r' {
+                ' '
+            } else {
+                '·'
+            }
+        })
+        .collect();
 
     if data.len() > max_len {
         format!("\"{}...\"", preview)
