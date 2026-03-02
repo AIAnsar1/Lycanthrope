@@ -6,7 +6,7 @@
 [![Rust](https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white)](https://www.rust-lang.org/) [![C](https://img.shields.io/badge/C-00599C?style=for-the-badge&logo=c&logoColor=white)](https://en.wikipedia.org/wiki/C_(programming_language)) [![Tokio](https://img.shields.io/badge/Tokio-async-blue?style=for-the-badge)](https://tokio.rs/) [![Platform](https://img.shields.io/badge/Platform-Win%20%7C%20Linux%20%7C%20macOS%20%7C%20Android-green?style=for-the-badge)](#-platform-support) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
 
 
-``` bash
+``` 
 
 //                                                                                                                   
 //                                                                                                                   
