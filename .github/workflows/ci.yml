@@ -187,14 +187,13 @@ jobs:
       - name: 📊 Check C code style
         run: |
           echo "=== C Source Files ==="
-          find csrc/ -name "*.c" -o -name "*.h" | head -20
+          find csrc/ -name "*.c" -o -name "*.h" | sort
           echo ""
           echo "=== Line counts ==="
-          wc -l csrc/**/*.c csrc/**/*.h
+          find csrc/ -name "*.c" -o -name "*.h" | xargs wc -l
           echo ""
           echo "=== Checking for common issues ==="
-          # No tabs in C code
-          if grep -rn $'\t' csrc/; then
+          if grep -rn "$(printf '\t')" csrc/; then
             echo "⚠️  Found tabs in C code (prefer spaces)"
           else
             echo "✅ No tabs found"
