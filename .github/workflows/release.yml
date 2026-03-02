@@ -1,0 +1,116 @@
+name: 🚀 Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.artifact }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            artifact: lycanthrope-linux-x86_64
+            ext: tar.gz
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            artifact: lycanthrope-macos-x86_64
+            ext: tar.gz
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            artifact: lycanthrope-macos-arm64
+            ext: tar.gz
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            artifact: lycanthrope-windows-x86_64
+            ext: zip
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install Linux deps
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libpcap-dev
+
+      - name: Install Npcap SDK
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          Invoke-WebRequest -Uri "https://npcap.com/dist/npcap-sdk-1.13.zip" -OutFile "sdk.zip"
+          Expand-Archive -Path "sdk.zip" -DestinationPath "C:\NpcapSDK"
+          echo "NPCAP_SDK=C:\NpcapSDK" >> $env:GITHUB_ENV
+          echo "LIB=C:\NpcapSDK\Lib\x64;$env:LIB" >> $env:GITHUB_ENV
+
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Package (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir dist
+          cp target/${{ matrix.target }}/release/lycanthrope dist/
+          cp README.md dist/ 2>/dev/null || true
+          cd dist && tar czf ../${{ matrix.artifact }}.${{ matrix.ext }} *
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          mkdir dist
+          cp target/${{ matrix.target }}/release/lycanthrope.exe dist/
+          cp README.md dist/ -ErrorAction SilentlyContinue
+          Compress-Archive -Path dist/* -DestinationPath ${{ matrix.artifact }}.${{ matrix.ext }}
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.artifact }}.${{ matrix.ext }}
+
+  release:
+    name: 🚀 Create Release
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: artifacts/**/*
+          body: |
+            ## 🐺 Lycanthrope ${{ github.ref_name }}
+
+            Async TCP Connection Hijacker — Rust/C Hybrid
+
+            ### Downloads
+            | Platform | File |
+            |----------|------|
+            | 🐧 Linux x86_64 | `lycanthrope-linux-x86_64.tar.gz` |
+            | 🍎 macOS x86_64 | `lycanthrope-macos-x86_64.tar.gz` |
+            | 🍎 macOS ARM64 | `lycanthrope-macos-arm64.tar.gz` |
+            | 🪟 Windows x86_64 | `lycanthrope-windows-x86_64.zip` |
+
+            ### Requirements
+            - **Linux**: `libpcap` installed, root access
+            - **macOS**: root access
+            - **Windows**: [Npcap](https://npcap.com/) installed, Administrator

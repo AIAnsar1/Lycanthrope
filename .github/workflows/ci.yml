@@ -1,0 +1,296 @@
+name: 🐺 Lycanthrope CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+
+  linux:
+    name: 🐧 Linux (${{ matrix.rust }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust: [stable, nightly]
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🦀 Install Rust ${{ matrix.rust }}
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+          components: rustfmt, clippy
+
+      - name: 📦 Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpcap-dev build-essential
+
+      - name: 💾 Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: linux-${{ matrix.rust }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: linux-${{ matrix.rust }}-
+
+      - name: 🔨 Build
+        run: cargo build --release --verbose
+
+      - name: ✅ Unit Tests
+        run: cargo test --verbose
+
+      - name: 🔍 Clippy
+        if: matrix.rust == 'stable'
+        run: cargo clippy -- -D warnings
+        continue-on-error: true
+
+      - name: 📝 Format Check
+        if: matrix.rust == 'stable'
+        run: cargo fmt -- --check
+
+      - name: 🧪 Integration Tests (root)
+        if: matrix.rust == 'stable'
+        run: sudo cargo test -- --ignored
+        continue-on-error: true
+
+
+  macos:
+    name: 🍎 macOS
+    runs-on: macos-latest
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🦀 Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: 💾 Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: macos-stable-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: macos-stable-
+
+      - name: 🔨 Build
+        run: cargo build --release --verbose
+
+      - name: ✅ Unit Tests
+        run: cargo test --verbose
+
+
+  windows:
+    name: 🪟 Windows
+    runs-on: windows-latest
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🦀 Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: 📦 Install Npcap SDK
+        shell: powershell
+        run: |
+          # Download Npcap SDK
+          Invoke-WebRequest -Uri "https://npcap.com/dist/npcap-sdk-1.13.zip" -OutFile "npcap-sdk.zip"
+          Expand-Archive -Path "npcap-sdk.zip" -DestinationPath "C:\NpcapSDK"
+          echo "NPCAP_SDK=C:\NpcapSDK" >> $env:GITHUB_ENV
+          
+          # Also need the Packet.lib accessible
+          echo "LIB=C:\NpcapSDK\Lib\x64;$env:LIB" >> $env:GITHUB_ENV
+
+      - name: 📦 Install Npcap Runtime
+        shell: powershell
+        run: |
+          # Download and install Npcap (silent, WinPcap compatible)
+          Invoke-WebRequest -Uri "https://npcap.com/dist/npcap-1.80-oem.exe" -OutFile "npcap.exe"
+          Start-Process -FilePath "npcap.exe" -ArgumentList "/S /winpcap_mode=yes" -Wait
+        continue-on-error: true
+
+      - name: 💾 Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~\.cargo\bin\
+            ~\.cargo\registry\index\
+            ~\.cargo\registry\cache\
+            ~\.cargo\git\db\
+            target\
+          key: windows-stable-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: windows-stable-
+
+      - name: 🔨 Build
+        run: cargo build --release --verbose
+
+      - name: ✅ Unit Tests
+        run: cargo test --verbose
+        continue-on-error: true
+
+
+  quality:
+    name: 🔍 Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🦀 Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: 📦 Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpcap-dev
+
+      - name: 💾 Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: quality-stable-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: quality-stable-
+
+      - name: 📝 Rustfmt
+        run: cargo fmt --all -- --check
+
+      - name: 🔍 Clippy
+        run: cargo clippy --all-targets -- -D warnings
+        continue-on-error: true
+
+      - name: 📊 Check C code style
+        run: |
+          echo "=== C Source Files ==="
+          find csrc/ -name "*.c" -o -name "*.h" | head -20
+          echo ""
+          echo "=== Line counts ==="
+          wc -l csrc/**/*.c csrc/**/*.h
+          echo ""
+          echo "=== Checking for common issues ==="
+          # No tabs in C code
+          if grep -rn $'\t' csrc/; then
+            echo "⚠️  Found tabs in C code (prefer spaces)"
+          else
+            echo "✅ No tabs found"
+          fi
+
+  audit:
+    name: 🛡️ Security Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🦀 Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: 🛡️ Install cargo-audit
+        run: cargo install cargo-audit --locked
+        continue-on-error: true
+
+      - name: 🔒 Audit dependencies
+        run: cargo audit
+        continue-on-error: true
+
+
+  release:
+    name: 📦 Release (${{ matrix.target }})
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [linux, macos, windows, quality]
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            artifact: lycanthrope-linux-x86_64
+          - target: x86_64-apple-darwin
+            os: macos-latest
+            artifact: lycanthrope-macos-x86_64
+          - target: aarch64-apple-darwin
+            os: macos-latest
+            artifact: lycanthrope-macos-arm64
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            artifact: lycanthrope-windows-x86_64
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🦀 Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: 📦 Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpcap-dev
+
+      - name: 📦 Install Npcap SDK (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          Invoke-WebRequest -Uri "https://npcap.com/dist/npcap-sdk-1.13.zip" -OutFile "npcap-sdk.zip"
+          Expand-Archive -Path "npcap-sdk.zip" -DestinationPath "C:\NpcapSDK"
+          echo "NPCAP_SDK=C:\NpcapSDK" >> $env:GITHUB_ENV
+          echo "LIB=C:\NpcapSDK\Lib\x64;$env:LIB" >> $env:GITHUB_ENV
+
+      - name: 🔨 Build Release
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: 📦 Package (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir -p dist
+          cp target/${{ matrix.target }}/release/lycanthrope dist/
+          cp README.md LICENSE dist/ 2>/dev/null || true
+          cd dist && tar czf ../${{ matrix.artifact }}.tar.gz *
+
+      - name: 📦 Package (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force -Path dist
+          Copy-Item "target\${{ matrix.target }}\release\lycanthrope.exe" "dist\"
+          Copy-Item "README.md" "dist\" -ErrorAction SilentlyContinue
+          Compress-Archive -Path "dist\*" -DestinationPath "${{ matrix.artifact }}.zip"
+
+      - name: 📤 Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: |
+            ${{ matrix.artifact }}.tar.gz
+            ${{ matrix.artifact }}.zip
+          if-no-files-found: ignore

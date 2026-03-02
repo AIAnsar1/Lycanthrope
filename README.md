@@ -8,13 +8,22 @@
 
 ``` bash
 
-
-██╗      ██╗   ██╗ ██████╗ █████╗ ███╗   ██╗████████╗██╗  ██╗██████╗  ██████╗ ██████╗ ███████╗
-██║      ██║   ██║██╔════╝██╔══██╗████╗  ██║╚══██╔══╝██║  ██║██╔══██╗██╔═══██╗██╔══██╗██╔════╝
-██║      ██║   ██║██║     ███████║██╔██╗ ██║   ██║   ███████║██████╔╝██║   ██║██████╔╝█████╗  
-██║      ██║   ██║██║     ██╔══██║██║╚██╗██║   ██║   ██╔══██║██╔══██╗██║   ██║██╔═══╝ ██╔══╝  
-███████╗ ╚██████╔╝╚██████╗██║  ██║██║ ╚████║   ██║   ██║  ██║██║  ██║╚██████╔╝██║     ███████╗
-╚══════╝  ╚═════╝  ╚═════╝╚═╝  ╚═╝╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚══════╝
+//                                                                                                                   
+//                                                                                                                   
+// ____ ____     ___  ____         _     ___      _____________ ____    ___________      ____   ________  __________ 
+// `MM' `MM(     )M' 6MMMMb/      dM.    `MM\     `M'MMMMMMMMMM `MM'    `MM`MMMMMMMb.   6MMMMb  `MMMMMMMb.`MMMMMMMMM 
+//  MM   `MM.    d' 8P    YM     ,MMb     MMM\     M /   MM   \  MM      MM MM    `Mb  8P    Y8  MM    `Mb MM      \ 
+//  MM    `MM.  d' 6M      Y     d'YM.    M\MM\    M     MM      MM      MM MM     MM 6M      Mb MM     MM MM        
+//  MM     `MM d'  MM           ,P `Mb    M \MM\   M     MM      MM      MM MM     MM MM      MM MM     MM MM    ,   
+//  MM      `MM'   MM           d'  YM.   M  \MM\  M     MM      MMMMMMMMMM MM    .M9 MM      MM MM    .M9 MMMMMMM   
+//  MM       MM    MM          ,P   `Mb   M   \MM\ M     MM      MM      MM MMMMMMM9' MM      MM MMMMMMM9' MM    `   
+//  MM       MM    MM          d'    YM.  M    \MM\M     MM      MM      MM MM  \M\   MM      MM MM        MM        
+//  MM       MM    YM      6  ,MMMMMMMMb  M     \MMM     MM      MM      MM MM   \M\  YM      M9 MM        MM        
+//  MM    /  MM     8b    d9  d'      YM. M      \MM     MM      MM      MM MM    \M\  8b    d8  MM        MM      / 
+// _MMMMMMM _MM_     YMMMM9 _dM_     _dMM_M_      \M    _MM_    _MM_    _MM_MM_    \M\_ YMMMM9  _MM_      _MMMMMMMMM 
+//                                                                                                                   
+//                                                                                                                   
+//                                                                                                                   
 ```
 *A high‑performance TCP session manipulation tool built with a hybrid
 Rust/C architecture.*

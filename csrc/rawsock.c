@@ -11,11 +11,24 @@
     static __thread char lyc_errbuf[256];
 #endif
 
-static void lyc_set_error(const char *msg)
+#ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable: 4505)
+#endif
+
+#if defined(__GNUC__) || defined(__clang__)
+    __attribute__((unused))
+#endif
+static void
+lyc_set_error(const char *msg)
 {
     strncpy(lyc_errbuf, msg, sizeof(lyc_errbuf) - 1);
     lyc_errbuf[sizeof(lyc_errbuf) - 1] = '\0';
 }
+
+#ifdef _MSC_VER
+    #pragma warning(pop)
+#endif
 
 const char *lyc_last_error(void)
 {
